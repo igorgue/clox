@@ -17,9 +17,11 @@ ASANFLAGS  = -fsanitize=address
 ASANFLAGS += -fno-common
 ASANFLAGS += -fno-omit-frame-pointer
 
+SRC = $(wildcard *.h) $(wildcard *.c)
+
 .PHONY: clox
 clox:
-	$(CC) $(CFLAGS) $(ASANFLAGS) $(LIBS) -o clox main.c
+	$(CC) $(CFLAGS) $(ASANFLAGS) $(LIBS) -o clox $(SRC)
 
 .PHONY: clean
 clean:
