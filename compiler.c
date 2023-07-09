@@ -88,11 +88,6 @@ static void emitConstant(Value value) {
 
 static void endCompiler() { emitReturn(); }
 
-static void grouping() {
-  expression();
-  consume(TOKEN_RIGHT_PAREN, "Expect ')' after expression.");
-}
-
 static void number() {
   double value = strtod(parser.previous.start, NULL);
   emitConstant(value);
@@ -100,6 +95,11 @@ static void number() {
 
 static void expression() {
   // what goes here?
+}
+
+static void grouping() {
+  expression();
+  consume(TOKEN_RIGHT_PAREN, "Expect ')' after expression.");
 }
 
 bool compile(const char *source, Chunk *chunk) {
