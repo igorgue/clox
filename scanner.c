@@ -24,6 +24,24 @@ static char advance() {
   return scanner.current[-1];
 }
 
+static char peek() { return *scanner.current; }
+
+static char peekNext() {
+  if (isAtEnd())
+    return '\0';
+  return scanner.current[1];
+}
+
+static bool match(char expected) {
+  if (isAtEnd())
+    return false;
+  if (*scanner.current != expected)
+    return false;
+
+  scanner.current++;
+  return true;
+}
+
 static Token makeToken(TokenType type) {
   Token token;
   token.type = type;
@@ -42,7 +60,31 @@ static Token errorToken(const char *message) {
   return token;
 }
 
+static void skipWhitespace() {
+  for (;;) {
+    char c = peek();
+    switch (c) {
+    case ' ':
+    case '\r':
+    case '\t':
+      advance();
+      break;
+    case '/':
+      if (peekNext() == '/') {
+        while (peek() != '\n' && !isAtEnd())
+          advance();
+      } else {
+        return;
+      }
+      break;
+    default:
+      return;
+    }
+  }
+}
+
 Token scanToken() {
+  skipWhitespace();
   scanner.start = scanner.current;
   if (isAtEnd())
     return makeToken(TOKEN_EOF);
@@ -75,6 +117,17 @@ Token scanToken() {
     return makeToken(TOKEN_SLASH);
   case '*':
     return makeToken(TOKEN_STAR);
+  case '!':
+    return makeToken(match('=') ? TOKEN_BANG_EQUAL : TOKEN_BANG);
+  case '=':
+
+    return makeToken(match('=') ? TOKEN_EQUAL_EQUAL : TOKEN_EQUAL);
+
+  case '<':
+    return makeToken(match('=') ? TOKEN_LESS_EQUAL : TOKEN_LESS);
+  case '>':
+
+    return makeToken(match('=') ? TOKEN_GREATER_EQUAL : TOKEN_GREATER);
   }
 
   return errorToken("Unexpected character.");
