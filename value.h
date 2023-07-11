@@ -3,6 +3,12 @@
 
 #include "common.h"
 
+typedef enum {
+  VAL_BOOL,
+  VAL_NIL,
+  VAL_NUMBER,
+} ValueType;
+
 typedef double Value;
 
 typedef struct {
@@ -10,6 +16,14 @@ typedef struct {
   int count;
   Value *values;
 } ValueArray;
+
+typedef struct {
+  ValueType type;
+  union {
+    bool boolean;
+    double number;
+  } as;
+} ValueObject;
 
 void initValueArray(ValueArray *array);
 void writeValueArray(ValueArray *array, Value value);
