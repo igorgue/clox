@@ -130,7 +130,6 @@ static InterpretResult run() {
         runtimeError("Operands must be two numbers or two strings.");
         return INTERPRET_RUNTIME_ERROR;
       }
-      BINARY_OP(NUMBER_VAL, +);
       break;
     case OP_SUBTRACT:
       BINARY_OP(NUMBER_VAL, -);
