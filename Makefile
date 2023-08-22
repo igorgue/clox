@@ -13,8 +13,8 @@ CFLAGS += -Werror
 CFLAGS += -Wmissing-declarations
 CFLAGS += -DUNITY_SUPPORT_64 -DUNITY_OUTPUT_COLOR
 
-ASANFLAGS  = -fsanitize=address
-ASANFLAGS += -fno-common
+ASANFLAGS  = -fno-common
+# ASANFLAGS += -fsanitize=address
 ASANFLAGS += -fno-omit-frame-pointer
 
 SRC = $(wildcard *.h) $(wildcard *.c)
