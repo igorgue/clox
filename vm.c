@@ -356,6 +356,7 @@ static InterpretResult run() {
       break;
     case OP_RETURN: {
       Value result = pop();
+      closeUpvalues(frame->slots);
       vm.frameCount--;
       if (vm.frameCount == 0) {
         pop();
