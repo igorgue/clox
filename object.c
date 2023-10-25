@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "chunk.h"
 #include "memory.h"
 #include "object.h"
 #include "table.h"
@@ -28,6 +29,7 @@ static Obj *allocateObject(size_t size, ObjType type) {
 ObjClass *newClass(ObjString *name) {
   ObjClass *klass = ALLOCATE_OBJ(ObjClass, OBJ_CLASS);
   klass->name = name;
+  initTable(&klass->methods);
   return klass;
 }
 
