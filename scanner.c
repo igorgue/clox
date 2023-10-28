@@ -1,7 +1,8 @@
-#include "scanner.h"
-#include "common.h"
 #include <stdio.h>
 #include <string.h>
+
+#include "common.h"
+#include "scanner.h"
 
 typedef struct {
   const char *start;
@@ -17,12 +18,10 @@ void initScanner(const char *source) {
   scanner.line = 1;
 }
 
-static bool isDigit(char c) { return c >= '0' && c <= '9'; }
-
 static bool isAlpha(char c) {
   return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_';
 }
-
+static bool isDigit(char c) { return c >= '0' && c <= '9'; }
 static bool isAtEnd() { return *scanner.current == '\0'; }
 
 static char advance() {
@@ -209,7 +208,6 @@ Token scanToken() {
     return makeToken(TOKEN_LEFT_PAREN);
   case ')':
     return makeToken(TOKEN_RIGHT_PAREN);
-
   case '{':
     return makeToken(TOKEN_LEFT_BRACE);
   case '}':
@@ -218,12 +216,10 @@ Token scanToken() {
     return makeToken(TOKEN_SEMICOLON);
   case ',':
     return makeToken(TOKEN_COMMA);
-
   case '.':
     return makeToken(TOKEN_DOT);
   case '-':
     return makeToken(TOKEN_MINUS);
-
   case '+':
     return makeToken(TOKEN_PLUS);
   case '/':
@@ -233,13 +229,10 @@ Token scanToken() {
   case '!':
     return makeToken(match('=') ? TOKEN_BANG_EQUAL : TOKEN_BANG);
   case '=':
-
     return makeToken(match('=') ? TOKEN_EQUAL_EQUAL : TOKEN_EQUAL);
-
   case '<':
     return makeToken(match('=') ? TOKEN_LESS_EQUAL : TOKEN_LESS);
   case '>':
-
     return makeToken(match('=') ? TOKEN_GREATER_EQUAL : TOKEN_GREATER);
   case '"':
     return string();
