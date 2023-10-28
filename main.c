@@ -1,8 +1,11 @@
-#include "common.h"
-#include "vm.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#include "chunk.h"
+#include "common.h"
+#include "debug.h"
+#include "vm.h"
 
 static void repl() {
   char line[1024];
@@ -48,12 +51,10 @@ static char *readFile(const char *path) {
 static void runFile(const char *path) {
   char *source = readFile(path);
   InterpretResult result = interpret(source);
-
-  free(source);
+  free(source); // [owner]
 
   if (result == INTERPRET_COMPILE_ERROR)
     exit(65);
-
   if (result == INTERPRET_RUNTIME_ERROR)
     exit(70);
 }
