@@ -1,21 +1,16 @@
-#include "vm.h"
-#include "chunk.h"
-#include "common.h"
-#include "compiler.h"
-#include "debug.h"
-#include "object.h"
-#include "table.h"
-#include "value.h"
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
 
+#include "common.h"
+#include "compiler.h"
+#include "debug.h"
 #include "memory.h"
 #include "object.h"
+#include "vm.h"
 
-VM vm;
-
+VM vm; // [one]
 static Value clockNative(int argCount, Value *args) {
   return NUMBER_VAL((double)clock() / CLOCKS_PER_SEC);
 }
@@ -37,7 +32,8 @@ static void runtimeError(const char *format, ...) {
     CallFrame *frame = &vm.frames[i];
     ObjFunction *function = frame->closure->function;
     size_t instruction = frame->ip - function->chunk.code - 1;
-    fprintf(stderr, "[line %d] in ", function->chunk.lines[instruction]);
+    fprintf(stderr, "[line %d] in ", // [minus]
+            function->chunk.lines[instruction]);
     if (function->name == NULL) {
       fprintf(stderr, "script\n");
     } else {
@@ -45,10 +41,6 @@ static void runtimeError(const char *format, ...) {
     }
   }
 
-  CallFrame *frame = &vm.frames[vm.frameCount - 1];
-  size_t instruction = frame->ip - frame->closure->function->chunk.code - 1;
-  int line = frame->closure->function->chunk.lines[instruction];
-  fprintf(stderr, "[line %d] in script\n", line);
   resetStack();
 }
 
@@ -188,7 +180,7 @@ static bool bindMethod(ObjClass *klass, ObjString *name) {
   }
 
   ObjBoundMethod *bound = newBoundMethod(peek(0), AS_CLOSURE(method));
-  pop(); // Instance.
+  pop();
   push(OBJ_VAL(bound));
   return true;
 }
@@ -256,10 +248,13 @@ static InterpretResult run() {
   CallFrame *frame = &vm.frames[vm.frameCount - 1];
 
 #define READ_BYTE() (*frame->ip++)
+
 #define READ_SHORT()                                                           \
   (frame->ip += 2, (uint16_t)((frame->ip[-2] << 8) | frame->ip[-1]))
+
 #define READ_CONSTANT()                                                        \
   (frame->closure->function->chunk.constants.values[READ_BYTE()])
+
 #define READ_STRING() AS_STRING(READ_CONSTANT())
 #define BINARY_OP(valueType, op)                                               \
   do {                                                                         \
@@ -271,6 +266,7 @@ static InterpretResult run() {
     double a = AS_NUMBER(pop());                                               \
     push(valueType(a op b));                                                   \
   } while (false)
+
   for (;;) {
 #ifdef DEBUG_TRACE_EXECUTION
     printf("          ");
@@ -279,6 +275,7 @@ static InterpretResult run() {
       printValue(*slot);
       printf(" ]");
     }
+    printf("\n");
     disassembleInstruction(
         &frame->closure->function->chunk,
         (int)(frame->ip - frame->closure->function->chunk.code));
@@ -309,7 +306,6 @@ static InterpretResult run() {
     }
     case OP_SET_LOCAL: {
       uint8_t slot = READ_BYTE();
-
       frame->slots[slot] = peek(0);
       break;
     }
@@ -327,6 +323,15 @@ static InterpretResult run() {
       ObjString *name = READ_STRING();
       tableSet(&vm.globals, name, peek(0));
       pop();
+      break;
+    }
+    case OP_SET_GLOBAL: {
+      ObjString *name = READ_STRING();
+      if (tableSet(&vm.globals, name, peek(0))) {
+        tableDelete(&vm.globals, name); // [delete]
+        runtimeError("Undefined variable '%s'.", name->chars);
+        return INTERPRET_RUNTIME_ERROR;
+      }
       break;
     }
     case OP_GET_UPVALUE: {
@@ -352,7 +357,6 @@ static InterpretResult run() {
       if (tableGet(&instance->fields, name, &value)) {
         pop(); // Instance.
         push(value);
-
         break;
       }
 
@@ -362,6 +366,11 @@ static InterpretResult run() {
       break;
     }
     case OP_SET_PROPERTY: {
+      if (!IS_INSTANCE(peek(1))) {
+        runtimeError("Only instances have fields.");
+        return INTERPRET_RUNTIME_ERROR;
+      }
+
       ObjInstance *instance = AS_INSTANCE(peek(1));
       tableSet(&instance->fields, READ_STRING(), peek(0));
       Value value = pop();
@@ -372,6 +381,7 @@ static InterpretResult run() {
     case OP_GET_SUPER: {
       ObjString *name = READ_STRING();
       ObjClass *superclass = AS_CLASS(pop());
+
       if (!bindMethod(superclass, name)) {
         return INTERPRET_RUNTIME_ERROR;
       }
@@ -389,7 +399,7 @@ static InterpretResult run() {
     case OP_LESS:
       BINARY_OP(BOOL_VAL, <);
       break;
-    case OP_ADD:
+    case OP_ADD: {
       if (IS_STRING(peek(0)) && IS_STRING(peek(1))) {
         concatenate();
       } else if (IS_NUMBER(peek(0)) && IS_NUMBER(peek(1))) {
@@ -401,6 +411,7 @@ static InterpretResult run() {
         return INTERPRET_RUNTIME_ERROR;
       }
       break;
+    }
     case OP_SUBTRACT:
       BINARY_OP(NUMBER_VAL, -);
       break;
@@ -413,14 +424,13 @@ static InterpretResult run() {
     case OP_NOT:
       push(BOOL_VAL(isFalsey(pop())));
       break;
-    case OP_NEGATE: {
+    case OP_NEGATE:
       if (!IS_NUMBER(peek(0))) {
         runtimeError("Operand must be a number.");
         return INTERPRET_RUNTIME_ERROR;
       }
       push(NUMBER_VAL(-AS_NUMBER(pop())));
       break;
-    }
     case OP_PRINT: {
       printValue(pop());
       printf("\n");
@@ -514,7 +524,7 @@ static InterpretResult run() {
 
       ObjClass *subclass = AS_CLASS(peek(0));
       tableAddAll(&AS_CLASS(superclass)->methods, &subclass->methods);
-      pop();
+      pop(); // Subclass.
       break;
     }
     case OP_METHOD:
@@ -522,11 +532,18 @@ static InterpretResult run() {
       break;
     }
   }
+
 #undef READ_BYTE
 #undef READ_SHORT
 #undef READ_CONSTANT
 #undef READ_STRING
 #undef BINARY_OP
+}
+
+void hack(bool b) {
+  run();
+  if (b)
+    hack(false);
 }
 
 InterpretResult interpret(const char *source) {
