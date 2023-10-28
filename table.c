@@ -1,4 +1,3 @@
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -108,15 +107,15 @@ bool tableDelete(Table *table, ObjString *key) {
   // Place a tombstone in the entry.
   entry->key = NULL;
   entry->value = BOOL_VAL(true);
-
   return true;
 }
 
 void tableAddAll(Table *from, Table *to) {
   for (int i = 0; i < from->capacity; i++) {
     Entry *entry = &from->entries[i];
-    if (entry->key != NULL)
+    if (entry->key != NULL) {
       tableSet(to, entry->key, entry->value);
+    }
   }
 }
 
@@ -150,7 +149,6 @@ void tableRemoveWhite(Table *table) {
     }
   }
 }
-
 void markTable(Table *table) {
   for (int i = 0; i < table->capacity; i++) {
     Entry *entry = &table->entries[i];
