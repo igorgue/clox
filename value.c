@@ -7,8 +7,8 @@
 
 void initValueArray(ValueArray *array) {
   array->values = NULL;
-  array->count = 0;
   array->capacity = 0;
+  array->count = 0;
 }
 
 void writeValueArray(ValueArray *array, Value value) {
@@ -40,7 +40,6 @@ void printValue(Value value) {
     printObject(value);
   }
 #else
-
   switch (value.type) {
   case VAL_BOOL:
     printf(AS_BOOL(value) ? "true" : "false");
@@ -67,7 +66,6 @@ bool valuesEqual(Value a, Value b) {
 #else
   if (a.type != b.type)
     return false;
-
   switch (a.type) {
   case VAL_BOOL:
     return AS_BOOL(a) == AS_BOOL(b);
