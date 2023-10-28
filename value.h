@@ -2,6 +2,7 @@
 #define clox_value_h
 
 #include "common.h"
+#include <string.h>
 
 typedef struct Obj Obj;
 typedef struct ObjString ObjString;
@@ -30,7 +31,7 @@ typedef uint64_t Value;
 #define FALSE_VAL ((Value)(uint64_t)(QNAN | TAG_FALSE))
 #define TRUE_VAL ((Value)(uint64_t)(QNAN | TAG_TRUE))
 #define NIL_VAL ((Value)(uint64_t)(QNAN | TAG_NIL))
-#define NUMBER_VAL(value) numToValue(value)
+#define NUMBER_VAL(num) numToValue(num)
 #define OBJ_VAL(obj) (Value)(SIGN_BIT | QNAN | (uint64_t)(uintptr_t)(obj))
 
 static inline double valueToNum(Value value) {
@@ -47,7 +48,12 @@ static inline Value numToValue(double num) {
 
 #else
 
-typedef enum { VAL_BOOL, VAL_NIL, VAL_NUMBER, VAL_OBJ } ValueType;
+typedef enum {
+  VAL_BOOL,
+  VAL_NIL, // [user-types]
+  VAL_NUMBER,
+  VAL_OBJ
+} ValueType;
 
 typedef struct {
   ValueType type;
@@ -55,7 +61,7 @@ typedef struct {
     bool boolean;
     double number;
     Obj *obj;
-  } as;
+  } as; // [as]
 } Value;
 
 #define IS_BOOL(value) ((value).type == VAL_BOOL)
