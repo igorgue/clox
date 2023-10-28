@@ -2,8 +2,6 @@
 
 #include "compiler.h"
 #include "memory.h"
-#include "object.h"
-#include "table.h"
 #include "vm.h"
 
 #ifdef DEBUG_LOG_GC
@@ -135,11 +133,17 @@ static void freeObject(Obj *object) {
     freeTable(&klass->methods);
     FREE(ObjClass, object);
     break;
-  }
+  } // [braces]
   case OBJ_CLOSURE: {
     ObjClosure *closure = (ObjClosure *)object;
     FREE_ARRAY(ObjUpvalue *, closure->upvalues, closure->upvalueCount);
     FREE(ObjClosure, object);
+    break;
+  }
+  case OBJ_FUNCTION: {
+    ObjFunction *function = (ObjFunction *)object;
+    freeChunk(&function->chunk);
+    FREE(ObjFunction, object);
     break;
   }
   case OBJ_INSTANCE: {
@@ -155,12 +159,6 @@ static void freeObject(Obj *object) {
     ObjString *string = (ObjString *)object;
     FREE_ARRAY(char, string->chars, string->length + 1);
     FREE(ObjString, object);
-    break;
-  }
-  case OBJ_FUNCTION: {
-    ObjFunction *function = (ObjFunction *)object;
-    freeChunk(&function->chunk);
-    FREE(ObjFunction, object);
     break;
   }
   case OBJ_UPVALUE:
@@ -200,6 +198,7 @@ static void sweep() {
   Obj *object = vm.objects;
   while (object != NULL) {
     if (object->isMarked) {
+      object->isMarked = false;
       previous = object;
       object = object->next;
     } else {
@@ -224,6 +223,7 @@ void collectGarbage() {
 
   markRoots();
   traceReferences();
+  tableRemoveWhite(&vm.strings);
   sweep();
 
   vm.nextGC = vm.bytesAllocated * GC_HEAP_GROW_FACTOR;
